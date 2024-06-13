@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.thirty3.job.job_tracker.controller.dto.CreateJobPost;
 import com.thirty3.job.job_tracker.model.JobPost;
 import com.thirty3.job.job_tracker.repository.JobPostRepository;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -110,5 +111,43 @@ public class JobPostControllerTest {
 
     // Assert
     result.andExpect(status().is4xxClientError());
+  }
+
+  @Test
+  public void Given_GetJobPosts_WhenNoJobPosts_ThenReturnClientError() throws Exception {
+    // Arrange
+    Mockito.when(repository.findAll()).thenReturn(null);
+
+    // Act
+    ResultActions result = mockMvc.perform(MockMvcRequestBuilders.get("/job-post"));
+
+    // Assert
+    result.andExpect(status().is4xxClientError());
+  }
+
+  @Test
+  public void Given_GetJobPosts_WhenListOfJobPostsAvailable_ThenReturnOk() throws Exception {
+    // Arrange
+    Mockito.when(repository.findAll()).thenReturn(List.of(JobPost.builder().build()));
+
+    // Act
+    ResultActions result = mockMvc.perform(MockMvcRequestBuilders.get("/job-post"));
+
+    // Assert
+    result.andExpect(status().isOk());
+  }
+
+  @Test
+  public void Given_GetJobPosts_WhenListOfJobPostsAvailable_ThenReturnListOfPosts()
+      throws Exception {
+    // Arrange
+    Mockito.when(repository.findAll())
+        .thenReturn(List.of(JobPost.builder().build(), JobPost.builder().build()));
+
+    // Act
+    ResultActions result = mockMvc.perform(MockMvcRequestBuilders.get("/job-post"));
+
+    // Assert
+    result.andExpect(jsonPath("$.length()").value(2));
   }
 }
