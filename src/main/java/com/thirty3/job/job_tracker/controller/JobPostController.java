@@ -4,6 +4,7 @@ import com.thirty3.job.job_tracker.controller.dto.CreateJobPost;
 import com.thirty3.job.job_tracker.model.JobPost;
 import com.thirty3.job.job_tracker.repository.JobPostRepository;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,15 @@ public class JobPostController {
     } else {
       throw new ResourceNotFoundException();
     }
+  }
+
+  @GetMapping("/job-post")
+  public List<JobPost> getJobPosts() {
+    List<JobPost> list = repository.findAll();
+    if (list == null) {
+      throw new ResourceNotFoundException();
+    }
+    return list;
   }
 
   @PostMapping(value = "/job-post", consumes = "application/json")
