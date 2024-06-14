@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.thirty3.job.job_tracker.controller.dto.CreateJobPost;
+import com.thirty3.job.job_tracker.controller.dto.JobPostCreateRequest;
 import com.thirty3.job.job_tracker.model.JobPost;
 import com.thirty3.job.job_tracker.repository.JobPostRepository;
 import java.util.List;
@@ -65,14 +65,14 @@ public class JobPostControllerTest {
   }
 
   @Test
-  public void Given_JobPost_WhenValid_Then_ReturnWithId() throws Exception {
+  public void Given_ValidJobPost_WhenCreateJobPost_Then_ReturnWithId() throws Exception {
     // Arrange
-    CreateJobPost createJobPost = CreateJobPost.builder().jobTitle("<job title>").build();
+    JobPostCreateRequest request = JobPostCreateRequest.builder().jobTitle("<job title>").build();
 
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
     ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
-    String bodyJson = ow.writeValueAsString(createJobPost);
+    String bodyJson = ow.writeValueAsString(request);
 
     Mockito.when(repository.save(Mockito.any()))
         .thenReturn(JobPost.builder().id(1L).jobTitle("<job title>").build());

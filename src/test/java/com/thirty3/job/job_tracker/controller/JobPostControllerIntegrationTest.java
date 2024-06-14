@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.thirty3.job.job_tracker.controller.dto.CreateJobPost;
+import com.thirty3.job.job_tracker.controller.dto.JobPostCreateRequest;
 import com.thirty3.job.job_tracker.controller.dto.JobPostUpdateRequest;
 import com.thirty3.job.job_tracker.model.JobPost;
 import com.thirty3.job.job_tracker.repository.JobPostRepository;
@@ -68,7 +68,7 @@ class JobPostControllerIntegrationTest {
   }
 
   @Test
-  void Given_EmptyRequestBody_When_PostJobPost_ThenReturnBadRequest() {
+  void Given_EmptyRequestBody_When_CreateJobPost_ThenReturnBadRequest() {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -83,9 +83,9 @@ class JobPostControllerIntegrationTest {
   }
 
   @Test
-  void Given_ValidJobPost_WhenPostJobPost_ThenGetJobPostShouldReturnJobPost() {
+  void Given_ValidJobPost_WhenCreateJobPost_ThenGetJobPostShouldReturnJobPost() {
     // Action
-    CreateJobPost request = CreateJobPost.builder().jobTitle("<job title>").build();
+    JobPostCreateRequest request = JobPostCreateRequest.builder().jobTitle("<job title>").build();
     ResponseEntity<JobPost> responseEntity =
         this.restTemplate.postForEntity(
             "http://localhost:" + port + "/job-post", request, JobPost.class, (Object) null);
@@ -102,7 +102,7 @@ class JobPostControllerIntegrationTest {
   @Test
   void Given_ValidJobPost_WhenCreateJobPost_ThenJobPostShouldBeCreatedWithBookmarkedStatus() {
     // Action
-    CreateJobPost request = CreateJobPost.builder().jobTitle("<job title>").build();
+    JobPostCreateRequest request = JobPostCreateRequest.builder().jobTitle("<job title>").build();
     ResponseEntity<JobPost> responseEntity =
         this.restTemplate.postForEntity(
             "http://localhost:" + port + "/job-post", request, JobPost.class, (Object) null);
@@ -178,7 +178,7 @@ class JobPostControllerIntegrationTest {
   }
 
   @Test
-  void Given_NullValueForUrl_WhenUpdateJobPost_ThenFieldShouldBeDeleted() {
+  void Given_NullValueForUrl_WhenUpdateJobPost_ThenFieldShouldNotUpdate() {
     // Arrange
     JobPost jobPost =
         createAJobPost(
@@ -190,8 +190,8 @@ class JobPostControllerIntegrationTest {
             JobPost.Status.BOOKMARKED);
 
     // Action
-    CreateJobPost jobPostToBePatched =
-        CreateJobPost.builder().jobTitle("originalTitle").url("").build();
+    JobPostUpdateRequest jobPostToBePatched =
+        JobPostUpdateRequest.builder().jobTitle("originalTitle").url(null).build();
 
     this.restTemplate.patchForObject(
         "http://localhost:" + port + "/job-post/" + jobPost.getId(),
@@ -201,8 +201,7 @@ class JobPostControllerIntegrationTest {
     // Assert
     var updatedJobPost = getJobPost(jobPost.getId());
     assertThat(updatedJobPost.getId()).as("job post id").isEqualTo(jobPost.getId());
-    assertThat(updatedJobPost.getJobTitle()).as("job post title").isEqualTo("originalTitle");
-    assertThat(updatedJobPost.getUrl()).as("job post url").isEqualTo("");
+    assertThat(updatedJobPost.getUrl()).as("job post url").isEqualTo("originalUrl");
   }
 
   @Test
@@ -254,8 +253,8 @@ class JobPostControllerIntegrationTest {
       String companyName,
       String location,
       JobPost.Status status) {
-    CreateJobPost request =
-        CreateJobPost.builder()
+    JobPostCreateRequest request =
+        JobPostCreateRequest.builder()
             .jobTitle(jobTitle)
             .url(url)
             .jobDescription(jobDescription)
@@ -271,7 +270,7 @@ class JobPostControllerIntegrationTest {
   }
 
   private JobPost createAJobPost(String jobTitle) {
-    CreateJobPost request = CreateJobPost.builder().jobTitle(jobTitle).build();
+    JobPostCreateRequest request = JobPostCreateRequest.builder().jobTitle(jobTitle).build();
     ResponseEntity<JobPost> jobPostResponseEntity =
         this.restTemplate.postForEntity(
             "http://localhost:" + port + "/job-post", request, JobPost.class, (Object) null);

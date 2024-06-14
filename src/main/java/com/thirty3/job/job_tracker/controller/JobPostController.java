@@ -1,6 +1,6 @@
 package com.thirty3.job.job_tracker.controller;
 
-import com.thirty3.job.job_tracker.controller.dto.CreateJobPost;
+import com.thirty3.job.job_tracker.controller.dto.JobPostCreateRequest;
 import com.thirty3.job.job_tracker.controller.dto.JobPostUpdateRequest;
 import com.thirty3.job.job_tracker.model.JobPost;
 import com.thirty3.job.job_tracker.repository.JobPostRepository;
@@ -35,12 +35,12 @@ public class JobPostController {
   }
 
   @PostMapping(value = "/job-post", consumes = "application/json")
-  public JobPost createJobPost(@Valid @RequestBody CreateJobPost createJobPost) {
+  public JobPost createJobPost(@Valid @RequestBody JobPostCreateRequest request) {
     JobPost jobPost = new JobPost();
-    jobPost.setJobTitle(createJobPost.getJobTitle());
-    jobPost.setCompanyName(createJobPost.getCompanyName());
-    jobPost.setUrl(createJobPost.getUrl());
-    jobPost.setLocation(createJobPost.getLocation());
+    jobPost.setJobTitle(request.getJobTitle());
+    jobPost.setCompanyName(request.getCompanyName());
+    jobPost.setUrl(request.getUrl());
+    jobPost.setLocation(request.getLocation());
     jobPost.setStatus(JobPost.Status.BOOKMARKED);
     return repository.save(jobPost);
   }
