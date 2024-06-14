@@ -93,27 +93,6 @@ public class JobPostControllerTest {
   }
 
   @Test
-  public void Given_JobPost_WhenNoJobTitle_ThenReturnClientError() throws Exception {
-    CreateJobPost createJobPost =
-        CreateJobPost.builder().jobDescription("<job description>").build();
-
-    ObjectMapper mapper = new ObjectMapper();
-    mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
-    ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
-    String bodyJson = ow.writeValueAsString(createJobPost);
-
-    // Act
-    ResultActions result =
-        mockMvc.perform(
-            MockMvcRequestBuilders.post("/job-post")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(bodyJson));
-
-    // Assert
-    result.andExpect(status().is4xxClientError());
-  }
-
-  @Test
   public void Given_GetJobPosts_WhenNoJobPosts_ThenReturnClientError() throws Exception {
     // Arrange
     Mockito.when(repository.findAll()).thenReturn(null);

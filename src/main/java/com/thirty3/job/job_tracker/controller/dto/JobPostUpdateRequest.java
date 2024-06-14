@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class CreateJobPost {
+public class JobPostUpdateRequest {
   private String jobTitle;
 
   private String url;
