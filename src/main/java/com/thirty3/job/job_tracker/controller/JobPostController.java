@@ -70,4 +70,11 @@ public class JobPostController {
     }
     return repository.save(loadedJobPost);
   }
+
+  @DeleteMapping(value = "/job-post/{id}")
+  public void deleteJobPost(@PathVariable Long id) {
+    JobPost loadedJobPost = repository.findById(id).orElseThrow(ResourceNotFoundException::new);
+
+    repository.delete(loadedJobPost);
+  }
 }

@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -172,7 +172,7 @@ class JobPostControllerIntegrationTest {
   }
 
   @Test
-  void Given_NullValueForTitle_WhenUpdateJobPost_ThenFieldShouldBeDeleted() {
+  void Given_NullValueForUrl_WhenUpdateJobPost_ThenFieldShouldBeDeleted() {
     // Arrange
     JobPost jobPost =
         createAJobPost(
@@ -197,6 +197,46 @@ class JobPostControllerIntegrationTest {
     assertThat(updatedJobPost.getId()).as("job post id").isEqualTo(jobPost.getId());
     assertThat(updatedJobPost.getJobTitle()).as("job post title").isEqualTo("originalTitle");
     assertThat(updatedJobPost.getUrl()).as("job post url").isEqualTo("");
+  }
+
+  @Test
+  void Given_JobPostExists_WhenDeleteJobPost_ThenGetJobPostShouldReturnNotFound() {
+    // Arrange
+    JobPost jobPost = createAJobPost("job title");
+
+    // Action
+    this.restTemplate.delete("http://localhost:" + port + "/job-post/" + jobPost.getId());
+
+    // Assert
+    assertThat(
+            this.restTemplate
+                .getForEntity(
+                    "http://localhost:" + port + "/job-post/" + jobPost.getId(), String.class)
+                .getStatusCode())
+        .isEqualTo(HttpStatus.NOT_FOUND);
+  }
+
+  @Test
+  void Given_JobPostDoesNotExist_WhenDeleteJobPost_ThenShouldReturnNotFound() {
+    // Action
+    System.out.println(
+        this.restTemplate
+            .exchange(
+                "http://localhost:" + port + "/job-post/" + 10,
+                HttpMethod.DELETE,
+                null,
+                String.class)
+            .getStatusCode());
+    assertThat(
+            this.restTemplate
+                .exchange(
+                    "http://localhost:" + port + "/job-post/" + 10,
+                    HttpMethod.DELETE,
+                    null,
+                    String.class)
+                .getStatusCode())
+        .as("status code")
+        .isEqualTo(HttpStatus.NOT_FOUND);
   }
 
   // utils
