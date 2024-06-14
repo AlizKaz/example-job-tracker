@@ -38,6 +38,7 @@ public class JobPostController {
   public JobPost createJobPost(@Valid @RequestBody JobPostCreateRequest request) {
     JobPost jobPost = new JobPost();
     jobPost.setJobTitle(request.getJobTitle());
+    jobPost.setJobDescription(request.getJobDescription());
     jobPost.setCompanyName(request.getCompanyName());
     jobPost.setUrl(request.getUrl());
     jobPost.setLocation(request.getLocation());
