@@ -1,14 +1,18 @@
 package com.thirty3.job.job_tracker.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.thirty3.job.job_tracker.serializer.DateToEpochSeconds;
+import jakarta.persistence.*;
+import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @Entity
 @Builder
@@ -30,6 +34,14 @@ public class JobPost {
   private String jobDescription;
 
   private JobPost.Status status;
+
+  @CreatedDate
+  @JsonSerialize(using = DateToEpochSeconds.class)
+  private Date createdDate;
+
+  @LastModifiedDate
+  @JsonSerialize(using = DateToEpochSeconds.class)
+  private Date lastModifiedDate;
 
   public enum Status {
     BOOKMARKED,

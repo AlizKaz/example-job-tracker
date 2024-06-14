@@ -60,7 +60,7 @@ class JobPostControllerIntegrationTest {
     ResponseEntity<JobPost> re =
         this.restTemplate.getForEntity(
             "http://localhost:" + port + "/job-post/" + jobPostId, JobPost.class);
-    assertThat(re.getStatusCode().is2xxSuccessful()).as("http status code");
+    assertThat(re.getStatusCode()).as("http status code").isEqualTo(HttpStatus.OK);
     assertThat(re.getBody()).as("body should not be null").isNotNull();
     assertThat(re.getBody().getJobTitle())
         .as("jobPost's job title")
@@ -85,18 +85,24 @@ class JobPostControllerIntegrationTest {
   @Test
   void Given_ValidJobPost_WhenCreateJobPost_ThenGetJobPostShouldReturnJobPost() {
     // Action
-    JobPostCreateRequest request = JobPostCreateRequest.builder().jobTitle("<job title>").build();
-    ResponseEntity<JobPost> responseEntity =
-        this.restTemplate.postForEntity(
-            "http://localhost:" + port + "/job-post", request, JobPost.class, (Object) null);
-
-    assertThat(responseEntity.getBody()).as("body").isNotNull();
-    var jobPostId = responseEntity.getBody().getId();
+    var id =
+        createAJobPost(
+                "Senior Software Developer",
+                "https://company.com/url",
+                "Ipsum Lorel",
+                "Uber",
+                "Toronto - Canada",
+                null)
+            .getId();
 
     // Assert
-    JobPost jobPost = getJobPost(jobPostId);
-    assertThat(jobPost.getId()).as("id").isEqualTo(jobPostId);
-    assertThat(jobPost.getJobTitle()).as("job title").isEqualTo("<job title>");
+    var jobPost = getJobPost(id);
+    assertThat(jobPost.getId()).as("id").isEqualTo(id);
+    assertThat(jobPost.getJobTitle()).as("job title").isEqualTo("Senior Software Developer");
+    assertThat(jobPost.getUrl()).as("url").isEqualTo("https://company.com/url");
+    assertThat(jobPost.getJobDescription()).as("job description").isEqualTo("Ipsum Lorel");
+    assertThat(jobPost.getLocation()).as("location").isEqualTo("Toronto - Canada");
+    assertThat(jobPost.getCreatedDate()).as("createdDate").isNotNull();
   }
 
   @Test
@@ -126,8 +132,7 @@ class JobPostControllerIntegrationTest {
     // Action
 
     String jsonAsString =
-        this.restTemplate.getForObject(
-            "http://localhost:" + port + "/job-post", String.class, (Object) null);
+        this.restTemplate.getForObject("http://localhost:" + port + "/job-post", String.class);
     List<JobPost> list =
         new ObjectMapper().readValue(jsonAsString, new TypeReference<List<JobPost>>() {});
 
@@ -157,10 +162,7 @@ class JobPostControllerIntegrationTest {
             .status(JobPost.Status.ACCEPTED)
             .build();
 
-    this.restTemplate.patchForObject(
-        "http://localhost:" + port + "/job-post/" + jobPost.getId(),
-        jobPostUpdateRequest,
-        JobPost.class);
+    updateJobPost(jobPost.getId(), jobPostUpdateRequest);
 
     // Assert
     var updatedJobPost = getJobPost(jobPost.getId());
@@ -190,18 +192,31 @@ class JobPostControllerIntegrationTest {
             JobPost.Status.BOOKMARKED);
 
     // Action
-    JobPostUpdateRequest jobPostToBePatched =
+    JobPostUpdateRequest request =
         JobPostUpdateRequest.builder().jobTitle("originalTitle").url(null).build();
 
-    this.restTemplate.patchForObject(
-        "http://localhost:" + port + "/job-post/" + jobPost.getId(),
-        jobPostToBePatched,
-        JobPost.class);
+    updateJobPost(jobPost.getId(), request);
 
     // Assert
     var updatedJobPost = getJobPost(jobPost.getId());
     assertThat(updatedJobPost.getId()).as("job post id").isEqualTo(jobPost.getId());
     assertThat(updatedJobPost.getUrl()).as("job post url").isEqualTo("originalUrl");
+  }
+
+  @Test
+  void Given_JobPostExists_WhenUpdateJobPost_ThenShouldChangeLastModifiedDate() {
+    // Arrange
+    var jobPost = createAJobPost("Senior Software Developer");
+
+    // Action
+    JobPostUpdateRequest request =
+        JobPostUpdateRequest.builder().jobTitle("Staff Software Developer").build();
+    updateJobPost(jobPost.getId(), request);
+
+    // Assert
+    assertThat(getJobPost(jobPost.getId()).getLastModifiedDate())
+        .as("last modified date")
+        .isAfter(jobPost.getLastModifiedDate());
   }
 
   @Test
@@ -264,7 +279,7 @@ class JobPostControllerIntegrationTest {
             .build();
     ResponseEntity<JobPost> jobPostResponseEntity =
         this.restTemplate.postForEntity(
-            "http://localhost:" + port + "/job-post", request, JobPost.class, (Object) null);
+            "http://localhost:" + port + "/job-post", request, JobPost.class);
 
     return jobPostResponseEntity.getBody();
   }
@@ -281,5 +296,10 @@ class JobPostControllerIntegrationTest {
   private JobPost getJobPost(long jobPostId) {
     return this.restTemplate.getForObject(
         "http://localhost:" + port + "/job-post/" + jobPostId, JobPost.class);
+  }
+
+  private void updateJobPost(Long id, JobPostUpdateRequest jobPostToBePatched) {
+    this.restTemplate.patchForObject(
+        "http://localhost:" + port + "/job-post/" + id, jobPostToBePatched, JobPost.class);
   }
 }
