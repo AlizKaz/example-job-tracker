@@ -20,6 +20,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.util.MultiValueMap;
 
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -41,12 +42,13 @@ class JobPostControllerIntegrationTest {
   }
 
   @Test
-  void Given_NoJobPost_When_GetJobPost_ThenClientError() {
+  void Given_JobPostDoesNotExists_When_GetJobPost_ThenHttpNotFound() {
     assertThat(
-        this.restTemplate
-            .getForEntity("http://localhost:" + port + "/job-post/10", String.class)
-            .getStatusCode()
-            .is4xxClientError());
+            this.restTemplate
+                .getForEntity("http://localhost:" + port + "/job-post/10", String.class)
+                .getStatusCode())
+        .as("status code")
+        .isEqualTo(HttpStatus.NOT_FOUND);
   }
 
   @Test
@@ -66,14 +68,18 @@ class JobPostControllerIntegrationTest {
   }
 
   @Test
-  void Given_EmptyRequestBody_When_PostJobPost_ThenReturnClientError() {
-    CreateJobPost request = null;
+  void Given_EmptyRequestBody_When_PostJobPost_ThenReturnBadRequest() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(headers);
+
     assertThat(
-        this.restTemplate
-            .postForEntity(
-                "http://localhost:" + port + "/job-post", request, String.class, (Object) null)
-            .getStatusCode()
-            .is4xxClientError());
+            this.restTemplate
+                .postForEntity("http://localhost:" + port + "/job-post", request, String.class)
+                .getStatusCode())
+        .as("status code")
+        .isEqualTo(HttpStatus.BAD_REQUEST);
   }
 
   @Test
