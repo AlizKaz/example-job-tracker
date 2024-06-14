@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thirty3.job.job_tracker.controller.dto.CreateJobPost;
+import com.thirty3.job.job_tracker.controller.dto.JobPostUpdateRequest;
 import com.thirty3.job.job_tracker.model.JobPost;
 import com.thirty3.job.job_tracker.repository.JobPostRepository;
 import java.util.Date;
@@ -93,6 +94,22 @@ class JobPostControllerIntegrationTest {
   }
 
   @Test
+  void Given_ValidJobPost_WhenCreateJobPost_ThenJobPostShouldBeCreatedWithBookmarkedStatus() {
+    // Action
+    CreateJobPost request = CreateJobPost.builder().jobTitle("<job title>").build();
+    ResponseEntity<JobPost> responseEntity =
+        this.restTemplate.postForEntity(
+            "http://localhost:" + port + "/job-post", request, JobPost.class, (Object) null);
+
+    assertThat(responseEntity.getBody()).as("body").isNotNull();
+    var jobPostId = responseEntity.getBody().getId();
+
+    // Assert
+    JobPost jobPost = getJobPost(jobPostId);
+    assertThat(jobPost.getStatus()).as("id").isEqualTo(JobPost.Status.BOOKMARKED);
+  }
+
+  @Test
   void Given_1000JobPostInDB_WhenGetAllJobPost_ThenShouldReturn1000JobPosts()
       throws JsonProcessingException {
     // Arrange
@@ -120,21 +137,23 @@ class JobPostControllerIntegrationTest {
             "originalUrl",
             "originalJobDescription",
             "originalCompanyName",
-            "originalLocation");
+            "originalLocation",
+            JobPost.Status.BOOKMARKED);
 
     // Action
-    CreateJobPost jobPostToBePatched =
-        CreateJobPost.builder()
+    var jobPostUpdateRequest =
+        JobPostUpdateRequest.builder()
             .jobTitle("patchedTitle")
             .url("patchedUrl")
             .jobDescription("patchedJobDescription")
             .companyName("patchedCompanyName")
             .location("patchedLocation")
+            .status(JobPost.Status.ACCEPTED)
             .build();
 
     this.restTemplate.patchForObject(
         "http://localhost:" + port + "/job-post/" + jobPost.getId(),
-        jobPostToBePatched,
+        jobPostUpdateRequest,
         JobPost.class);
 
     // Assert
@@ -149,6 +168,7 @@ class JobPostControllerIntegrationTest {
         .as("job post company name")
         .isEqualTo("patchedCompanyName");
     assertThat(updatedJobPost.getLocation()).as("job post location").isEqualTo("patchedLocation");
+    assertThat(updatedJobPost.getStatus()).as("job post status").isEqualTo(JobPost.Status.ACCEPTED);
   }
 
   @Test
@@ -160,7 +180,8 @@ class JobPostControllerIntegrationTest {
             "originalUrl",
             "originalJobDescription",
             "originalCompanyName",
-            "originalLocation");
+            "originalLocation",
+            JobPost.Status.BOOKMARKED);
 
     // Action
     CreateJobPost jobPostToBePatched =
@@ -181,7 +202,12 @@ class JobPostControllerIntegrationTest {
   // utils
 
   private JobPost createAJobPost(
-      String jobTitle, String url, String jobDescription, String companyName, String location) {
+      String jobTitle,
+      String url,
+      String jobDescription,
+      String companyName,
+      String location,
+      JobPost.Status status) {
     CreateJobPost request =
         CreateJobPost.builder()
             .jobTitle(jobTitle)
@@ -189,6 +215,7 @@ class JobPostControllerIntegrationTest {
             .jobDescription(jobDescription)
             .companyName(companyName)
             .location(location)
+            .status(status)
             .build();
     ResponseEntity<JobPost> jobPostResponseEntity =
         this.restTemplate.postForEntity(

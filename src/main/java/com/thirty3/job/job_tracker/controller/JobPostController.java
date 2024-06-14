@@ -65,6 +65,9 @@ public class JobPostController {
     if (updateRequest.getUrl() != null) {
       loadedJobPost.setUrl(updateRequest.getUrl());
     }
+    if (updateRequest.getStatus() != null) {
+      loadedJobPost.setStatus(updateRequest.getStatus());
+    }
     return repository.save(loadedJobPost);
   }
 }
