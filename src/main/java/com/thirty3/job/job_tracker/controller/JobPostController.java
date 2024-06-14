@@ -1,6 +1,7 @@
 package com.thirty3.job.job_tracker.controller;
 
 import com.thirty3.job.job_tracker.controller.dto.CreateJobPost;
+import com.thirty3.job.job_tracker.controller.dto.JobPostUpdateRequest;
 import com.thirty3.job.job_tracker.model.JobPost;
 import com.thirty3.job.job_tracker.repository.JobPostRepository;
 import jakarta.validation.Valid;
@@ -41,7 +42,29 @@ public class JobPostController {
     jobPost.setUrl(createJobPost.getUrl());
     jobPost.setLocation(createJobPost.getLocation());
     jobPost.setStatus(JobPost.Status.BOOKMARKED);
-    JobPost saved = repository.save(jobPost);
-    return saved;
+    return repository.save(jobPost);
+  }
+
+  @PatchMapping(value = "/job-post/{id}")
+  public JobPost updateJobPost(
+      @PathVariable Long id, @Valid @RequestBody JobPostUpdateRequest updateRequest) {
+    JobPost loadedJobPost = repository.findById(id).orElseThrow(ResourceNotFoundException::new);
+
+    if (updateRequest.getJobTitle() != null) {
+      loadedJobPost.setJobTitle(updateRequest.getJobTitle());
+    }
+    if (updateRequest.getJobDescription() != null) {
+      loadedJobPost.setJobDescription(updateRequest.getJobDescription());
+    }
+    if (updateRequest.getLocation() != null) {
+      loadedJobPost.setLocation(updateRequest.getLocation());
+    }
+    if (updateRequest.getCompanyName() != null) {
+      loadedJobPost.setCompanyName(updateRequest.getCompanyName());
+    }
+    if (updateRequest.getUrl() != null) {
+      loadedJobPost.setUrl(updateRequest.getUrl());
+    }
+    return repository.save(loadedJobPost);
   }
 }

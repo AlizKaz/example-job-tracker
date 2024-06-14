@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.test.context.ActiveProfiles;
 
 @ActiveProfiles("test")
@@ -32,6 +33,10 @@ class JobPostControllerIntegrationTest {
   @BeforeEach
   public void initTests() {
     repository.deleteAll();
+
+    // this hack is for PATCHing with rest template:
+    // https://stackoverflow.com/questions/29447382/resttemplate-patch-request/29803488#29803488
+    restTemplate.getRestTemplate().setRequestFactory(new HttpComponentsClientHttpRequestFactory());
   }
 
   @Test
@@ -82,15 +87,14 @@ class JobPostControllerIntegrationTest {
     var jobPostId = responseEntity.getBody().getId();
 
     // Assert
-    JobPost jobPost =
-        this.restTemplate.getForObject(
-            "http://localhost:" + port + "/job-post/" + jobPostId, JobPost.class);
+    JobPost jobPost = getJobPost(jobPostId);
     assertThat(jobPost.getId()).as("id").isEqualTo(jobPostId);
     assertThat(jobPost.getJobTitle()).as("job title").isEqualTo("<job title>");
   }
 
   @Test
-  void Given_1000JobPostInDB_WhenGetAllJobPost_ThenShouldReturn1000JobPosts() throws JsonProcessingException {
+  void Given_1000JobPostInDB_WhenGetAllJobPost_ThenShouldReturn1000JobPosts()
+      throws JsonProcessingException {
     // Arrange
     for (int i = 0; i < 1000; i++) {
       createAJobPost("random title_" + new Date().getTime());
@@ -107,6 +111,92 @@ class JobPostControllerIntegrationTest {
     assertThat(list).as("job post list size does not match expected").hasSize(1000);
   }
 
+  @Test
+  void Given_ValidUpdateJobPostRequest_WhenUpdateJobPost_ThenJobPostShouldBeUpdated() {
+    // Arrange
+    JobPost jobPost =
+        createAJobPost(
+            "originalTitle",
+            "originalUrl",
+            "originalJobDescription",
+            "originalCompanyName",
+            "originalLocation");
+
+    // Action
+    CreateJobPost jobPostToBePatched =
+        CreateJobPost.builder()
+            .jobTitle("patchedTitle")
+            .url("patchedUrl")
+            .jobDescription("patchedJobDescription")
+            .companyName("patchedCompanyName")
+            .location("patchedLocation")
+            .build();
+
+    this.restTemplate.patchForObject(
+        "http://localhost:" + port + "/job-post/" + jobPost.getId(),
+        jobPostToBePatched,
+        JobPost.class);
+
+    // Assert
+    var updatedJobPost = getJobPost(jobPost.getId());
+    assertThat(updatedJobPost.getId()).as("job post id").isEqualTo(jobPost.getId());
+    assertThat(updatedJobPost.getJobTitle()).as("job post title").isEqualTo("patchedTitle");
+    assertThat(updatedJobPost.getJobDescription())
+        .as("job post description")
+        .isEqualTo("patchedJobDescription");
+    assertThat(updatedJobPost.getUrl()).as("job post url").isEqualTo("patchedUrl");
+    assertThat(updatedJobPost.getCompanyName())
+        .as("job post company name")
+        .isEqualTo("patchedCompanyName");
+    assertThat(updatedJobPost.getLocation()).as("job post location").isEqualTo("patchedLocation");
+  }
+
+  @Test
+  void Given_NullValueForTitle_WhenUpdateJobPost_ThenFieldShouldBeDeleted() {
+    // Arrange
+    JobPost jobPost =
+        createAJobPost(
+            "originalTitle",
+            "originalUrl",
+            "originalJobDescription",
+            "originalCompanyName",
+            "originalLocation");
+
+    // Action
+    CreateJobPost jobPostToBePatched =
+        CreateJobPost.builder().jobTitle("originalTitle").url("").build();
+
+    this.restTemplate.patchForObject(
+        "http://localhost:" + port + "/job-post/" + jobPost.getId(),
+        jobPostToBePatched,
+        JobPost.class);
+
+    // Assert
+    var updatedJobPost = getJobPost(jobPost.getId());
+    assertThat(updatedJobPost.getId()).as("job post id").isEqualTo(jobPost.getId());
+    assertThat(updatedJobPost.getJobTitle()).as("job post title").isEqualTo("originalTitle");
+    assertThat(updatedJobPost.getUrl()).as("job post url").isEqualTo("");
+  }
+
+  // utils
+
+  private JobPost createAJobPost(
+      String jobTitle, String url, String jobDescription, String companyName, String location) {
+    CreateJobPost request =
+        CreateJobPost.builder()
+            .jobTitle(jobTitle)
+            .url(url)
+            .jobDescription(jobDescription)
+            .companyName(companyName)
+            .location(location)
+            .build();
+    ResponseEntity<JobPost> jobPostResponseEntity =
+        this.restTemplate.postForEntity(
+            "http://localhost:" + port + "/job-post", request, JobPost.class, (Object) null);
+
+    return jobPostResponseEntity.getBody();
+  }
+
   private JobPost createAJobPost(String jobTitle) {
     CreateJobPost request = CreateJobPost.builder().jobTitle(jobTitle).build();
     ResponseEntity<JobPost> jobPostResponseEntity =
@@ -114,5 +204,10 @@ class JobPostControllerIntegrationTest {
             "http://localhost:" + port + "/job-post", request, JobPost.class, (Object) null);
 
     return jobPostResponseEntity.getBody();
+  }
+
+  private JobPost getJobPost(long jobPostId) {
+    return this.restTemplate.getForObject(
+        "http://localhost:" + port + "/job-post/" + jobPostId, JobPost.class);
   }
 }

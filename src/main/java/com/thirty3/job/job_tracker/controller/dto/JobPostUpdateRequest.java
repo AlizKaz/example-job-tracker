@@ -5,9 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class CreateJobPost {
-  private long id;
-
+public class JobPostUpdateRequest {
   private String jobTitle;
 
   private String url;
